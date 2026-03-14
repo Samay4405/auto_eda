@@ -62,11 +62,11 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 app.include_router(api_router)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "Automated EDA System API", "version": "1.0.0"}
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "healthy", "service": "automated-eda-api"}
 

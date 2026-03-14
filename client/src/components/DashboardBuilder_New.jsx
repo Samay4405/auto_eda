@@ -60,6 +60,27 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
     },
   };
 
+  const getDashboardHtml = (dashboardData) => {
+    if (!dashboardData || typeof dashboardData.html !== "string") return "";
+
+    const htmlCandidate = dashboardData.html;
+    const trimmed = htmlCandidate.trim();
+
+    // Some backend responses wrap HTML as a JSON string with a `code` field.
+    if (trimmed.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed.code === "string") {
+          return parsed.code;
+        }
+      } catch {
+        // Keep original candidate if it's not valid JSON.
+      }
+    }
+
+    return htmlCandidate;
+  };
+
   useEffect(() => {
     if (fileId) {
       fetchDataProfile();
@@ -197,8 +218,9 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
     if (!dashboard) return;
 
     try {
+      const dashboardHtml = getDashboardHtml(dashboard);
       const content =
-        format === "html" ? dashboard.html : JSON.stringify(dashboard, null, 2);
+        format === "html" ? dashboardHtml : JSON.stringify(dashboard, null, 2);
       const blob = new Blob([content], {
         type: format === "html" ? "text/html" : "application/json",
       });
@@ -219,8 +241,9 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
 
   const openDashboardInNewTab = () => {
     if (!dashboard) return;
+    const dashboardHtml = getDashboardHtml(dashboard);
     const newWindow = window.open();
-    newWindow.document.write(dashboard.html);
+    newWindow.document.write(dashboardHtml);
     newWindow.document.close();
   };
 
@@ -411,6 +434,10 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
       {/* Dashboard Display */}
       {dashboard && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          {(() => {
+            const dashboardHtml = getDashboardHtml(dashboard);
+            return (
+              <>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
               <BarChart3 className="w-5 h-5" />
@@ -491,12 +518,15 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
             </div>
             <div className="p-4">
               <iframe
-                srcDoc={dashboard.html}
+                srcDoc={dashboardHtml}
                 className="w-full h-96 border-0 rounded"
                 title="Dashboard Preview"
               />
             </div>
           </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

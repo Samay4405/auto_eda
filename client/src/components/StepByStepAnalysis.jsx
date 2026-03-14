@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import LoadingSpinner from "./LoadingSpinner";
+import { buildApiUrl } from "../api/apiService";
 
 const StepByStepAnalysis = ({ fileId, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -77,7 +78,7 @@ const StepByStepAnalysis = ({ fileId, onComplete }) => {
       formData.append("mode", selectedMode);
       formData.append("options", JSON.stringify(options));
 
-      const response = await fetch("http://localhost:8000/api/process", {
+      const response = await fetch(buildApiUrl("/api/process"), {
         method: "POST",
         body: formData,
       });

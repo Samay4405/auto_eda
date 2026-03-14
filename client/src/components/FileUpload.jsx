@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, File, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { apiService } from "../api/apiService";
 
 const FileUpload = ({ onFileUploaded, isUploading = false }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -34,20 +35,8 @@ const FileUpload = ({ onFileUploaded, isUploading = false }) => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
     try {
-      const response = await fetch("http://localhost:8000/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const result = await response.json();
+      const result = await apiService.uploadFile(selectedFile);
       toast.success("File uploaded successfully!");
 
       if (onFileUploaded) {

@@ -13,6 +13,7 @@ import ChartComponent from "../components/ChartComponent";
 import DashboardBuilder from "../components/DashboardBuilder";
 import LoadingSpinner from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
+import { buildApiUrl } from "../api/apiService";
 
 const VisualizationPage = () => {
   const { fileId } = useParams();
@@ -31,9 +32,7 @@ const VisualizationPage = () => {
   const loadCharts = async () => {
     setIsLoadingCharts(true);
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/charts/${fileId}`
-      );
+      const response = await fetch(buildApiUrl(`/api/charts/${fileId}`));
       if (response.ok) {
         const data = await response.json();
         setCharts(data.charts || []);

@@ -17,6 +17,7 @@ import {
 import ChartComponent from "../components/ChartComponent";
 import LoadingSpinner from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
+import { buildApiUrl } from "../api/apiService";
 
 const ResultsPage = () => {
   const { fileId } = useParams();
@@ -60,9 +61,7 @@ const ResultsPage = () => {
   const loadCharts = async () => {
     setIsLoadingCharts(true);
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/charts/${fileId}`
-      );
+      const response = await fetch(buildApiUrl(`/api/charts/${fileId}`));
       if (response.ok) {
         const data = await response.json();
         setCharts(data.charts || []);
@@ -78,9 +77,7 @@ const ResultsPage = () => {
   const loadInsights = async () => {
     setIsLoadingInsights(true);
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/insights/${fileId}`
-      );
+      const response = await fetch(buildApiUrl(`/api/insights/${fileId}`));
       if (response.ok) {
         const data = await response.json();
         setInsights(data.insights);

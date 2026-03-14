@@ -4,6 +4,7 @@ import { FileText, ArrowLeft, BarChart3 } from "lucide-react";
 import StepByStepAnalysis from "../components/StepByStepAnalysis";
 import LoadingSpinner from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
+import { buildApiUrl } from "../api/apiService";
 
 const AnalysisPage = () => {
   const { fileId } = useParams();
@@ -17,9 +18,7 @@ const AnalysisPage = () => {
     const fetchFileInfo = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/file/${fileId}/info`
-        );
+        const response = await fetch(buildApiUrl(`/api/file/${fileId}/info`));
         if (!response.ok) {
           throw new Error("Failed to fetch file information");
         }

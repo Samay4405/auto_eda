@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import DashboardBuilder from "../components/DashboardBuilder";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { AlertCircle, ArrowLeft } from "lucide-react";
+import { buildApiUrl } from "../api/apiService";
 
 const DashboardPage = () => {
   const [searchParams] = useSearchParams();
@@ -28,7 +29,7 @@ const DashboardPage = () => {
   const fetchFileInfo = async (id) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/file/${id}/info`);
+      const response = await fetch(buildApiUrl(`/api/file/${id}/info`));
       const data = await response.json();
 
       if (response.ok) {

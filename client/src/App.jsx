@@ -9,6 +9,7 @@ import AnalysisPage from "./pages/AnalysisPage";
 import ResultsPage from "./pages/ResultsPage";
 import DashboardPage from "./pages/DashboardPage";
 import VisualizationPage from "./pages/VisualizationPage";
+import { buildApiUrl } from "./api/apiService";
 import "./index.css";
 
 function App() {
@@ -16,10 +17,7 @@ function App() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Call cleanup endpoint when page is being unloaded
-      navigator.sendBeacon(
-        "http://localhost:8000/api/cleanup-session",
-        new FormData()
-      );
+      navigator.sendBeacon(buildApiUrl("/api/cleanup-session"), new FormData());
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);

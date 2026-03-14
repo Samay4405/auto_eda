@@ -16,6 +16,7 @@ import {
 import toast from "react-hot-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { buildApiUrl } from "../api/apiService";
 
 const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -76,7 +77,7 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
       formData.append("file_id", fileId);
 
       const response = await fetch(
-        "http://localhost:8000/api/dashboard/analyze-requirements",
+        buildApiUrl("/api/dashboard/analyze-requirements"),
         {
           method: "POST",
           body: formData,
@@ -135,7 +136,7 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
         formData.append("target_audience", "analyst");
 
         response = await fetch(
-          "http://localhost:8000/api/langgraph/dashboard/generate",
+          buildApiUrl("/api/langgraph/dashboard/generate"),
           {
             method: "POST",
             body: formData,
@@ -146,7 +147,7 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
           formData.append("business_context", businessContext);
         }
         response = await fetch(
-          "http://localhost:8000/api/dashboard/auto-generate",
+          buildApiUrl("/api/dashboard/auto-generate"),
           {
             method: "POST",
             body: formData,
@@ -159,7 +160,7 @@ const DashboardBuilder = ({ fileId, onDashboardGenerated }) => {
         formData.append("target_audience", "analyst");
 
         response = await fetch(
-          "http://localhost:8000/api/langgraph/dashboard/generate",
+          buildApiUrl("/api/langgraph/dashboard/generate"),
           {
             method: "POST",
             body: formData,

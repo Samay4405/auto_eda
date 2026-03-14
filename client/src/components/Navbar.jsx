@@ -9,6 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import { buildApiUrl } from "../api/apiService";
 
 const Navbar = () => {
   const location = useLocation();
@@ -27,7 +28,7 @@ const Navbar = () => {
       )
     ) {
       // Call the cleanup API endpoint
-      fetch("http://localhost:8000/api/cleanup-session", {
+      fetch(buildApiUrl("/api/cleanup-session"), {
         method: "POST",
       })
         .then((response) => response.json())

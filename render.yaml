@@ -1,15 +1,13 @@
 services:
-  # Backend Web Service
   - type: web
-    name: automated-eda-backend
+    name: auto-eda-backend
     runtime: python
-    region: oregon
-    plan: free
-    branch: main
     rootDir: server
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -17,14 +15,13 @@ services:
         value: production
       - key: DEBUG
         value: False
-      - key: GROQ_API_KEY
-        sync: false
       - key: CORS_ORIGINS
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: JWT_ALGORITHM
         value: HS256
       - key: JWT_EXPIRATION_HOURS
         value: 24
-    autoDeploy: true

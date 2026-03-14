@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-generated exploratory dashboard">
+    <title>Exploratory Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #8b5cf6;
+            --accent-color: #a78bfa;
+            --background-color: #faf5ff;
+            --surface-color: #ffffff;
+            --text-color: #1f2937;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            gap: 20px;
+            grid-auto-rows: minmax(200px, auto);
+        }
+
+        .dashboard-section {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .dashboard-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .section-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: none;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .chart-container {
+            padding: 20px;
+            height: 100%;
+            min-height: 300px;
+        }
+
+        .kpi-container {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .kpi-card:hover {
+            transform: scale(1.05);
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .kpi-trend {
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .insights-content {
+            padding: 20px;
+        }
+
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .insight-item:last-child {
+            border-bottom: none;
+        }
+
+        .insight-icon {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 15px;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .insight-text {
+            flex: 1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .chart-loading {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: var(--primary-color);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .height-small {
+            grid-row: span 1;
+        }
+
+        .height-standard {
+            grid-row: span 2;
+        }
+
+        .height-large {
+            grid-row: span 3;
+        }
+
+        .height-compact {
+            grid-row: span 1;
+            min-height: 120px;
+        }
+
+        .dashboard-footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .dashboard-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .dashboard-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .dashboard-title {
+                font-size: 2rem;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+<div class="dashboard-container dashboard-exploratory">
+
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">Exploratory Dashboard</h1>
+            <p class="dashboard-subtitle">AI-Generated Analysis • October 29, 2025 at 09:28 AM</p>
+        </div>
+        <div class="header-actions">
+            <button class="action-btn" onclick="exportDashboard()">
+                <span>📊</span> Export
+            </button>
+            <button class="action-btn" onclick="refreshDashboard()">
+                <span>🔄</span> Refresh
+            </button>
+        </div>
+    </header>
+<div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+
+    <section class="dashboard-section generic-section height-small" style="">
+        <div class="section-header">
+            <h3 class="section-title">Analysis</h3>
+        </div>
+        <div class="section-content" id="section_0">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </section>
+
+    <section class="dashboard-section generic-section height-large" style="">
+        <div class="section-header">
+            <h3 class="section-title">Analysis</h3>
+        </div>
+        <div class="section-content" id="section_1">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </section>
+
+    <section class="dashboard-section generic-section height-large" style="">
+        <div class="section-header">
+            <h3 class="section-title">Analysis</h3>
+        </div>
+        <div class="section-content" id="section_2">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </section>
+
+    <section class="dashboard-section generic-section height-large" style="">
+        <div class="section-header">
+            <h3 class="section-title">Analysis</h3>
+        </div>
+        <div class="section-content" id="section_3">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </section>
+</div>
+
+    <footer class="dashboard-footer">
+        <p>Generated by LangGraph AI Dashboard Builder • 
+           <span id="generation-time"></span> • 
+           <a href="#" onclick="showDataSources()">Data Sources</a>
+        </p>
+    </footer>
+</div>
+
+    <script>
+        
+// Dashboard Data and Configuration
+const dashboardData = {
+  "metadata": {
+    "total_rows": 100,
+    "total_columns": 5,
+    "column_types": {
+      "age": "int32",
+      "income": "int32",
+      "score": "float64",
+      "category": "object",
+      "region": "object"
+    },
+    "memory_usage": 12077,
+    "created_at": "2025-10-29T09:28:46.609544"
+  },
+  "columns": [
+    "age",
+    "income",
+    "score",
+    "category",
+    "region"
+  ],
+  "data": [
+    {
+      "age": 18,
+      "income": 126967,
+      "score": 34.92390395246058,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 52,
+      "income": 20111,
+      "score": 95.15958628201993,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 36,
+      "income": 127413,
+      "score": 71.65907406295725,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 53,
+      "income": 145576,
+      "score": 84.73899466178906,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 55,
+      "income": 131422,
+      "score": 90.54423666467247,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 19,
+      "income": 133452,
+      "score": 58.93142698708383,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 60,
+      "income": 120541,
+      "score": 51.97879417042959,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 21,
+      "income": 40175,
+      "score": 5.759330684023034,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 75,
+      "income": 117101,
+      "score": 52.68625113297324,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 42,
+      "income": 138700,
+      "score": 24.706649965070625,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 38,
+      "income": 21495,
+      "score": 11.035161586218567,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 19,
+      "income": 63952,
+      "score": 64.79237926462757,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 26,
+      "income": 143067,
+      "score": 85.062661237748,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 73,
+      "income": 130491,
+      "score": 23.951266248932857,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 52,
+      "income": 105642,
+      "score": 31.566575650864102,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 19,
+      "income": 63417,
+      "score": 61.20743314058558,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 72,
+      "income": 90204,
+      "score": 81.4656107318137,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 30,
+      "income": 141135,
+      "score": 36.37176883672766,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 71,
+      "income": 36064,
+      "score": 42.036929129329735,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 26,
+      "income": 31970,
+      "score": 67.20635865128838,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 39,
+      "income": 123830,
+      "score": 56.24072262274418,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 53,
+      "income": 109481,
+      "score": 26.813987698226715,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 37,
+      "income": 126201,
+      "score": 81.77161136656528,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 73,
+      "income": 125251,
+      "score": 24.580635418246455,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 48,
+      "income": 33782,
+      "score": 59.17103933015865,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 50,
+      "income": 90838,
+      "score": 9.332865258827749,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 55,
+      "income": 46118,
+      "score": 21.745972741964902,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 78,
+      "income": 51187,
+      "score": 71.70700200625075,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 70,
+      "income": 53236,
+      "score": 14.490543266005895,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 18,
+      "income": 64753,
+      "score": 5.3890664307915,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 25,
+      "income": 111157,
+      "score": 17.745673168724373,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 75,
+      "income": 111438,
+      "score": 88.93431676547775,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 24,
+      "income": 59794,
+      "score": 6.888886128208338,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 51,
+      "income": 144342,
+      "score": 1.4587393266084159,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 53,
+      "income": 138126,
+      "score": 6.2537685924270665,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 67,
+      "income": 122248,
+      "score": 39.19009229218088,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 70,
+      "income": 134381,
+      "score": 35.541554953912815,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 56,
+      "income": 69558,
+      "score": 74.09812665866394,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 58,
+      "income": 45122,
+      "score": 45.05656261653647,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 60,
+      "income": 35812,
+      "score": 72.23062935781813,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 41,
+      "income": 94501,
+      "score": 28.26755291642854,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 73,
+      "income": 109097,
+      "score": 82.03914565019726,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 65,
+      "income": 122067,
+      "score": 13.478062512928336,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 67,
+      "income": 126208,
+      "score": 92.9163934948501,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 22,
+      "income": 83997,
+      "score": 1.8790803049250293,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 37,
+      "income": 53015,
+      "score": 66.25968929207147,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 76,
+      "income": 77370,
+      "score": 30.32993287381036,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 33,
+      "income": 139997,
+      "score": 10.014203868039218,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 72,
+      "income": 107782,
+      "score": 15.010148347337172,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 28,
+      "income": 22672,
+      "score": 67.305583806781,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 25,
+      "income": 104407,
+      "score": 60.23185178525653,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 38,
+      "income": 29498,
+      "score": 72.65621767436836,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 31,
+      "income": 56731,
+      "score": 86.22120425646777,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 43,
+      "income": 65904,
+      "score": 68.58992786109025,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 63,
+      "income": 27384,
+      "score": 89.17294278269566,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 57,
+      "income": 118675,
+      "score": 87.3333927379871,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 26,
+      "income": 91070,
+      "score": 42.45931246238678,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 44,
+      "income": 21389,
+      "score": 79.22670198832597,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 36,
+      "income": 149996,
+      "score": 52.53977761183132,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 58,
+      "income": 133372,
+      "score": 65.13066263418071,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 70,
+      "income": 102994,
+      "score": 50.52056811153772,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 57,
+      "income": 111656,
+      "score": 5.916043985146668,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 67,
+      "income": 99354,
+      "score": 49.28097502279323,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 73,
+      "income": 85592,
+      "score": 85.1969067482892,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 35,
+      "income": 113628,
+      "score": 17.344674915373748,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 55,
+      "income": 71719,
+      "score": 31.718316174294824,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 73,
+      "income": 136051,
+      "score": 15.692399449185846,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 39,
+      "income": 87298,
+      "score": 36.9123510416295,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 48,
+      "income": 82243,
+      "score": 59.307792519815905,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 29,
+      "income": 103656,
+      "score": 19.60370423310147,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 46,
+      "income": 38257,
+      "score": 97.88834519992666,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 33,
+      "income": 120940,
+      "score": 36.91442019047443,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 62,
+      "income": 21855,
+      "score": 20.086487740672453,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 72,
+      "income": 145117,
+      "score": 25.344854527263994,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 70,
+      "income": 41980,
+      "score": 8.822055722429134,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 30,
+      "income": 31191,
+      "score": 42.775751534140596,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 52,
+      "income": 52477,
+      "score": 93.03158562311903,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 20,
+      "income": 140707,
+      "score": 12.025138955879989,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 26,
+      "income": 103353,
+      "score": 24.841821844121913,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 32,
+      "income": 148695,
+      "score": 17.5872284882989,
+      "category": "A",
+      "region": "North"
+    },
+    {
+      "age": 27,
+      "income": 100973,
+      "score": 86.96645109714625,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 67,
+      "income": 38421,
+      "score": 87.53004001113655,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 56,
+      "income": 21429,
+      "score": 17.42034604530025,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 23,
+      "income": 35018,
+      "score": 41.09180277438074,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 48,
+      "income": 70076,
+      "score": 23.516147450414437,
+      "category": "C",
+      "region": "South"
+    },
+    {
+      "age": 41,
+      "income": 128306,
+      "score": 1.003358066679494,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 47,
+      "income": 129443,
+      "score": 73.9933830420961,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 74,
+      "income": 84073,
+      "score": 38.65349088471678,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 56,
+      "income": 140126,
+      "score": 3.564592266882538,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 55,
+      "income": 107276,
+      "score": 73.60196681092114,
+      "category": "B",
+      "region": "South"
+    },
+    {
+      "age": 32,
+      "income": 50395,
+      "score": 88.13596161142748,
+      "category": "A",
+      "region": "West"
+    },
+    {
+      "age": 27,
+      "income": 104535,
+      "score": 99.36502801238643,
+      "category": "C",
+      "region": "West"
+    },
+    {
+      "age": 51,
+      "income": 144693,
+      "score": 53.30983218601043,
+      "category": "B",
+      "region": "East"
+    },
+    {
+      "age": 70,
+      "income": 33727,
+      "score": 67.0647660423743,
+      "category": "B",
+      "region": "West"
+    },
+    {
+      "age": 74,
+      "income": 52905,
+      "score": 26.808384482882076,
+      "category": "C",
+      "region": "East"
+    },
+    {
+      "age": 20,
+      "income": 89964,
+      "score": 67.6608717646742,
+      "category": "C",
+      "region": "North"
+    },
+    {
+      "age": 31,
+      "income": 63283,
+      "score": 27.984370562732064,
+      "category": "B",
+      "region": "North"
+    },
+    {
+      "age": 44,
+      "income": 132681,
+      "score": 97.32016158607043,
+      "category": "A",
+      "region": "East"
+    },
+    {
+      "age": 52,
+      "income": 51684,
+      "score": 5.063948848321919,
+      "category": "A",
+      "region": "South"
+    },
+    {
+      "age": 40,
+      "income": 104209,
+      "score": 8.371883585758654,
+      "category": "A",
+      "region": "West"
+    }
+  ]
+};
+const chartConfigs = [
+  {
+    "id": "correlation_heatmap",
+    "type": "heatmap",
+    "config": {
+      "z": [
+        [
+          1.0,
+          0.0074319119215505115,
+          0.048286232699500546
+        ],
+        [
+          0.0074319119215505115,
+          1.0,
+          -0.13209090681149227
+        ],
+        [
+          0.048286232699500546,
+          -0.13209090681149227,
+          1.0
+        ]
+      ],
+      "x": [
+        "age",
+        "income",
+        "score"
+      ],
+      "y": [
+        "age",
+        "income",
+        "score"
+      ],
+      "title": "Correlation Matrix",
+      "colorscale": "RdBu",
+      "symmetric": true
+    },
+    "size": "half_width",
+    "priority": "high"
+  },
+  {
+    "id": "distribution_age",
+    "type": "histogram",
+    "config": {
+      "x": [
+        18,
+        52,
+        36,
+        53,
+        55,
+        19,
+        60,
+        21,
+        75,
+        42,
+        38,
+        19,
+        26,
+        73,
+        52,
+        19,
+        72,
+        30,
+        71,
+        26,
+        39,
+        53,
+        37,
+        73,
+        48,
+        50,
+        55,
+        78,
+        70,
+        18,
+        25,
+        75,
+        24,
+        51,
+        53,
+        67,
+        70,
+        56,
+        58,
+        60,
+        41,
+        73,
+        65,
+        67,
+        22,
+        37,
+        76,
+        33,
+        72,
+        28,
+        25,
+        38,
+        31,
+        43,
+        63,
+        57,
+        26,
+        44,
+        36,
+        58,
+        70,
+        57,
+        67,
+        73,
+        35,
+        55,
+        73,
+        39,
+        48,
+        29,
+        46,
+        33,
+        62,
+        72,
+        70,
+        30,
+        52,
+        20,
+        26,
+        32,
+        27,
+        67,
+        56,
+        23,
+        48,
+        41,
+        47,
+        74,
+        56,
+        55,
+        32,
+        27,
+        51,
+        70,
+        74,
+        20,
+        31,
+        44,
+        52,
+        40
+      ],
+      "title": "Distribution of Age",
+      "color": "#7c3aed",
+      "bins": 30
+    },
+    "size": "half_width",
+    "priority": "high"
+  },
+  {
+    "id": "scatter_relationship",
+    "type": "scatter",
+    "config": {
+      "x": [
+        18,
+        52,
+        36,
+        53,
+        55,
+        19,
+        60,
+        21,
+        75,
+        42,
+        38,
+        19,
+        26,
+        73,
+        52,
+        19,
+        72,
+        30,
+        71,
+        26,
+        39,
+        53,
+        37,
+        73,
+        48,
+        50,
+        55,
+        78,
+        70,
+        18,
+        25,
+        75,
+        24,
+        51,
+        53,
+        67,
+        70,
+        56,
+        58,
+        60,
+        41,
+        73,
+        65,
+        67,
+        22,
+        37,
+        76,
+        33,
+        72,
+        28,
+        25,
+        38,
+        31,
+        43,
+        63,
+        57,
+        26,
+        44,
+        36,
+        58,
+        70,
+        57,
+        67,
+        73,
+        35,
+        55,
+        73,
+        39,
+        48,
+        29,
+        46,
+        33,
+        62,
+        72,
+        70,
+        30,
+        52,
+        20,
+        26,
+        32,
+        27,
+        67,
+        56,
+        23,
+        48,
+        41,
+        47,
+        74,
+        56,
+        55,
+        32,
+        27,
+        51,
+        70,
+        74,
+        20,
+        31,
+        44,
+        52,
+        40
+      ],
+      "y": [
+        126967,
+        20111,
+        127413,
+        145576,
+        131422,
+        133452,
+        120541,
+        40175,
+        117101,
+        138700,
+        21495,
+        63952,
+        143067,
+        130491,
+        105642,
+        63417,
+        90204,
+        141135,
+        36064,
+        31970,
+        123830,
+        109481,
+        126201,
+        125251,
+        33782,
+        90838,
+        46118,
+        51187,
+        53236,
+        64753,
+        111157,
+        111438,
+        59794,
+        144342,
+        138126,
+        122248,
+        134381,
+        69558,
+        45122,
+        35812,
+        94501,
+        109097,
+        122067,
+        126208,
+        83997,
+        53015,
+        77370,
+        139997,
+        107782,
+        22672,
+        104407,
+        29498,
+        56731,
+        65904,
+        27384,
+        118675,
+        91070,
+        21389,
+        149996,
+        133372,
+        102994,
+        111656,
+        99354,
+        85592,
+        113628,
+        71719,
+        136051,
+        87298,
+        82243,
+        103656,
+        38257,
+        120940,
+        21855,
+        145117,
+        41980,
+        31191,
+        52477,
+        140707,
+        103353,
+        148695,
+        100973,
+        38421,
+        21429,
+        35018,
+        70076,
+        128306,
+        129443,
+        84073,
+        140126,
+        107276,
+        50395,
+        104535,
+        144693,
+        33727,
+        52905,
+        89964,
+        63283,
+        132681,
+        51684,
+        104209
+      ],
+      "title": "age vs income",
+      "color": "#059669",
+      "size": 6
+    },
+    "size": "half_width",
+    "priority": "medium"
+  },
+  {
+    "id": "categorical_category",
+    "type": "bar_chart",
+    "config": {
+      "x": [
+        "B",
+        "A",
+        "C"
+      ],
+      "y": [
+        34,
+        34,
+        32
+      ],
+      "title": "Distribution of Category",
+      "color": "#d97706",
+      "orientation": "vertical"
+    },
+    "size": "half_width",
+    "priority": "medium"
+  }
+];
+const insights = [
+  "Dashboard generated for 100 records across 5 variables",
+  "Analysis type: Exploratory",
+  "Data completeness: 100.0%"
+];
+
+// Dashboard Initialization
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+});
+
+function initializeDashboard() {
+    renderKPICards();
+    renderCharts();
+    renderInsights();
+    setupEventListeners();
+}
+
+// KPI Card Rendering
+function renderKPICards() {
+    const kpiContainer = document.querySelector('.kpi-container');
+    if (!kpiContainer) return;
+    
+    const kpiData = extractKPIData();
+    kpiContainer.innerHTML = '';
+    
+    kpiData.forEach(kpi => {
+        const kpiCard = createKPICard(kpi);
+        kpiContainer.appendChild(kpiCard);
+    });
+}
+
+function extractKPIData() {
+    // Extract KPI data from dashboard data
+    const numericalColumns = dashboardData.metadata?.data_types?.numerical_columns || [];
+    const data = dashboardData.data?.records || [];
+    
+    return numericalColumns.slice(0, 4).map(col => {
+        const values = data.map(row => row[col]).filter(val => val != null);
+        const total = values.reduce((sum, val) => sum + val, 0);
+        const avg = values.length > 0 ? total / values.length : 0;
+        
+        return {
+            label: col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            value: total,
+            average: avg,
+            trend: Math.random() > 0.5 ? 'up' : 'down',
+            trendPercent: (Math.random() * 20 - 10).toFixed(1)
+        };
+    });
+}
+
+function createKPICard(kpi) {
+    const card = document.createElement('div');
+    card.className = 'kpi-card';
+    
+    const trendIcon = kpi.trend === 'up' ? '↗️' : '↘️';
+    const trendColor = kpi.trend === 'up' ? '#10b981' : '#ef4444';
+    
+    card.innerHTML = `
+        <div class="kpi-value">${formatNumber(kpi.value)}</div>
+        <div class="kpi-label">${kpi.label}</div>
+        <div class="kpi-trend" style="color: ${trendColor}">
+            ${trendIcon} ${kpi.trendPercent}%
+        </div>
+    `;
+    
+    return card;
+}
+
+// Chart Rendering
+function renderCharts() {
+    chartConfigs.forEach((config, index) => {
+        const chartElement = document.getElementById(config.id || `chart_${index}`);
+        if (chartElement) {
+            renderChart(chartElement, config);
+        }
+    });
+}
+
+function renderChart(element, config) {
+    // Remove loading spinner
+    element.innerHTML = '';
+    
+    try {
+        if (config.type === 'histogram') {
+            renderHistogram(element, config);
+        } else if (config.type === 'scatter') {
+            renderScatter(element, config);
+        } else if (config.type === 'bar_chart') {
+            renderBarChart(element, config);
+        } else if (config.type === 'heatmap') {
+            renderHeatmap(element, config);
+        } else if (config.type === 'line_chart') {
+            renderLineChart(element, config);
+        } else {
+            renderDefaultChart(element, config);
+        }
+    } catch (error) {
+        console.error('Error rendering chart:', error);
+        element.innerHTML = '<div class="error-message">Error loading chart</div>';
+    }
+}
+
+function renderHistogram(element, config) {
+    const data = extractColumnData(config.columns?.[0] || Object.keys(dashboardData.data?.by_column || {})[0]);
+    
+    const trace = {
+        x: data,
+        type: 'histogram',
+        name: config.title || 'Distribution',
+        marker: { color: config.color || '#3b82f6' },
+        nbinsx: 30
+    };
+    
+    const layout = {
+        title: config.title || 'Distribution Analysis',
+        xaxis: { title: config.columns?.[0] || 'Value' },
+        yaxis: { title: 'Frequency' },
+        margin: { t: 40, r: 30, b: 40, l: 60 },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+    
+    Plotly.newPlot(element, [trace], layout, {responsive: true});
+}
+
+function renderScatter(element, config) {
+    const xData = extractColumnData(config.columns?.[0]);
+    const yData = extractColumnData(config.columns?.[1]);
+    
+    const trace = {
+        x: xData,
+        y: yData,
+        mode: 'markers',
+        type: 'scatter',
+        name: config.title || 'Scatter Plot',
+        marker: { 
+            color: config.color || '#3b82f6',
+            size: 8,
+            opacity: 0.7
+        }
+    };
+    
+    const layout = {
+        title: config.title || 'Scatter Plot Analysis',
+        xaxis: { title: config.columns?.[0] || 'X' },
+        yaxis: { title: config.columns?.[1] || 'Y' },
+        margin: { t: 40, r: 30, b: 40, l: 60 },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+    
+    Plotly.newPlot(element, [trace], layout, {responsive: true});
+}
+
+function renderBarChart(element, config) {
+    const data = extractColumnData(config.columns?.[0]);
+    const valueCounts = getValueCounts(data);
+    
+    const trace = {
+        x: Object.keys(valueCounts),
+        y: Object.values(valueCounts),
+        type: 'bar',
+        name: config.title || 'Bar Chart',
+        marker: { color: config.color || '#3b82f6' }
+    };
+    
+    const layout = {
+        title: config.title || 'Bar Chart Analysis',
+        xaxis: { title: config.columns?.[0] || 'Category' },
+        yaxis: { title: 'Count' },
+        margin: { t: 40, r: 30, b: 40, l: 60 },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+    
+    Plotly.newPlot(element, [trace], layout, {responsive: true});
+}
+
+function renderHeatmap(element, config) {
+    const numericalColumns = dashboardData.metadata?.data_types?.numerical_columns || [];
+    const correlationMatrix = calculateCorrelationMatrix(numericalColumns);
+    
+    const trace = {
+        z: correlationMatrix.values,
+        x: correlationMatrix.columns,
+        y: correlationMatrix.columns,
+        type: 'heatmap',
+        colorscale: 'RdBu',
+        zmid: 0,
+        showscale: true
+    };
+    
+    const layout = {
+        title: 'Correlation Matrix',
+        margin: { t: 40, r: 30, b: 40, l: 60 },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+    
+    Plotly.newPlot(element, [trace], layout, {responsive: true});
+}
+
+function renderLineChart(element, config) {
+    const yData = extractColumnData(config.columns?.[0]);
+    const xData = Array.from({length: yData.length}, (_, i) => i);
+    
+    const trace = {
+        x: xData,
+        y: yData,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: config.title || 'Trend',
+        line: { color: config.color || '#3b82f6', width: 3 },
+        marker: { size: 6 }
+    };
+    
+    const layout = {
+        title: config.title || 'Trend Analysis',
+        xaxis: { title: 'Index' },
+        yaxis: { title: config.columns?.[0] || 'Value' },
+        margin: { t: 40, r: 30, b: 40, l: 60 },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)'
+    };
+    
+    Plotly.newPlot(element, [trace], layout, {responsive: true});
+}
+
+function renderDefaultChart(element, config) {
+    element.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #6b7280;">
+            <h3>Chart Type: ${config.type}</h3>
+            <p>Visualization will be rendered here</p>
+        </div>
+    `;
+}
+
+// Insights Rendering
+function renderInsights() {
+    const insightsContainer = document.querySelector('.insights-content');
+    if (!insightsContainer) return;
+    
+    insightsContainer.innerHTML = '';
+    
+    insights.forEach(insight => {
+        const insightElement = createInsightElement(insight);
+        insightsContainer.appendChild(insightElement);
+    });
+}
+
+function createInsightElement(insight) {
+    const element = document.createElement('div');
+    element.className = 'insight-item';
+    element.innerHTML = `
+        <div class="insight-icon"></div>
+        <div class="insight-text">${insight}</div>
+    `;
+    return element;
+}
+
+// Utility Functions
+function extractColumnData(columnName) {
+    if (!columnName || !dashboardData.data) return [];
+    
+    if (dashboardData.data.by_column && dashboardData.data.by_column[columnName]) {
+        return dashboardData.data.by_column[columnName].filter(val => val != null);
+    }
+    
+    if (dashboardData.data.records) {
+        return dashboardData.data.records
+            .map(record => record[columnName])
+            .filter(val => val != null);
+    }
+    
+    return [];
+}
+
+function getValueCounts(data) {
+    const counts = {};
+    data.forEach(value => {
+        counts[value] = (counts[value] || 0) + 1;
+    });
+    return counts;
+}
+
+function calculateCorrelationMatrix(columns) {
+    const matrix = [];
+    const size = columns.length;
+    
+    for (let i = 0; i < size; i++) {
+        const row = [];
+        for (let j = 0; j < size; j++) {
+            if (i === j) {
+                row.push(1);
+            } else {
+                const corr = calculateCorrelation(
+                    extractColumnData(columns[i]),
+                    extractColumnData(columns[j])
+                );
+                row.push(corr);
+            }
+        }
+        matrix.push(row);
+    }
+    
+    return { values: matrix, columns: columns };
+}
+
+function calculateCorrelation(x, y) {
+    if (x.length !== y.length || x.length === 0) return 0;
+    
+    const n = x.length;
+    const meanX = x.reduce((sum, val) => sum + val, 0) / n;
+    const meanY = y.reduce((sum, val) => sum + val, 0) / n;
+    
+    let numerator = 0;
+    let sumXSquared = 0;
+    let sumYSquared = 0;
+    
+    for (let i = 0; i < n; i++) {
+        const xDiff = x[i] - meanX;
+        const yDiff = y[i] - meanY;
+        numerator += xDiff * yDiff;
+        sumXSquared += xDiff * xDiff;
+        sumYSquared += yDiff * yDiff;
+    }
+    
+    const denominator = Math.sqrt(sumXSquared * sumYSquared);
+    return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    } else {
+        return num.toFixed(0);
+    }
+}
+
+// Event Handlers
+function setupEventListeners() {
+    // Make charts responsive
+    window.addEventListener('resize', function() {
+        const charts = document.querySelectorAll('.chart-container [id]');
+        charts.forEach(chart => {
+            if (chart.id && window.Plotly) {
+                Plotly.Plots.resize(chart.id);
+            }
+        });
+    });
+}
+
+function exportDashboard() {
+    // Create export functionality
+    const dashboardHTML = document.documentElement.outerHTML;
+    const blob = new Blob([dashboardHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dashboard.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function toggleFullscreen(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            element.requestFullscreen();
+        }
+    }
+}
+
+function showDataSources() {
+    alert('Data source information:\n' + JSON.stringify(dashboardData.metadata, null, 2));
+}
+
+        document.getElementById('generation-time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>

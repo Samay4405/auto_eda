@@ -1,0 +1,100 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: automated_eda_postgres
+    env_file:
+      - server/.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eda_network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: automated_eda_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - server/.env
+    environment:
+      FASTAPI_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379/0
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: HS256
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/uploads:/app/uploads
+      - ./server/generated_dashboards:/app/generated_dashboards
+    networks:
+      - eda_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: automated_eda_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eda_network
+
+  # Frontend (served from backend in production, or use separate service for development)
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: automated_eda_frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - client/.env
+    environment:
+      VITE_API_BASE_URL: http://backend:8000
+      VITE_SUPABASE_URL: ${SUPABASE_URL}
+      VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    depends_on:
+      - backend
+    networks:
+      - eda_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  eda_network:
+    driver: bridge
